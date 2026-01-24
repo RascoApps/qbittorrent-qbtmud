@@ -5,12 +5,13 @@ LABEL maintainer="RascoApps"
 LABEL description="qBittorrent with qbtmud custom WebUI"
 
 # Install qbtmud custom UI during build
-# Using specific version to avoid GitHub API rate limits during build
-ARG QBTMUD_VERSION=2.1.0-rc.1%2B15
+# Using specific version to ensure reproducible builds
+ARG QBTMUD_VERSION=2.1.0-rc.1+15
+ARG QBTMUD_VERSION_ENCODED=2.1.0-rc.1%2B15
 RUN mkdir -p /defaults/webui && \
     cd /tmp && \
     echo "Downloading qbtmud version ${QBTMUD_VERSION}..." && \
-    curl -kL -o qbtmud.zip "https://github.com/lantean-code/qbtmud/releases/download/${QBTMUD_VERSION}/qbt-mud-v${QBTMUD_VERSION}.zip" && \
+    curl -kL -o qbtmud.zip "https://github.com/lantean-code/qbtmud/releases/download/${QBTMUD_VERSION_ENCODED}/qbt-mud-v${QBTMUD_VERSION_ENCODED}.zip" && \
     unzip -q qbtmud.zip -d qbtmud_extracted && \
     # Install to defaults directory (LinuxServer.io copies this to /config on first run)
     cp -r qbtmud_extracted/* /defaults/webui/ && \
