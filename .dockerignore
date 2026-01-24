@@ -1,0 +1,29 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+LICENSE
+
+# Docker files
+docker-compose.yml
+.dockerignore
+
+# Local data
+config/
+downloads/
+tmp/
+*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
