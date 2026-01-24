@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  qbittorrent:
+    build: .
+    container_name: qbittorrent-qbtmud
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8080
+    volumes:
+      - ./config:/config
+      - ./downloads:/downloads
+    ports:
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    restart: unless-stopped
