@@ -6,12 +6,57 @@ A Docker solution that combines the latest qBittorrent release with the modern [
 
 - **Latest qBittorrent**: Based on LinuxServer.io's qBittorrent image (v5.1.4+)
 - **qbtmud WebUI**: Modern, user-friendly custom interface (v2.1.0-rc.1+15) pre-installed in the image
-- **Easy Deployment**: Simple Docker Compose setup
+- **Easy Deployment**: Simple Docker Compose setup or direct docker run
 - **Persistent Storage**: Configuration and downloads are preserved
 - **Cross-Platform**: Works on x86-64, ARM64, and other architectures
 - **Fast Startup**: WebUI is bundled in the image, no download needed at container startup
+- **Published Package**: Available on GitHub Container Registry
 
 ## Quick Start
+
+### Option 1: Using Pre-built Image (Recommended)
+
+Use the published container image from GitHub Container Registry:
+
+```bash
+docker run -d \
+  --name=qbittorrent-qbtmud \
+  -e PUID=1000 \
+  -e PGID=1000 \
+  -e TZ=Etc/UTC \
+  -e WEBUI_PORT=8080 \
+  -p 8080:8080 \
+  -p 6881:6881 \
+  -p 6881:6881/udp \
+  -v ./config:/config \
+  -v ./downloads:/downloads \
+  --restart unless-stopped \
+  ghcr.io/rascoapps/qbittorrent-qbtmud:latest
+```
+
+Or with Docker Compose:
+
+```yaml
+services:
+  qbittorrent:
+    image: ghcr.io/rascoapps/qbittorrent-qbtmud:latest
+    container_name: qbittorrent-qbtmud
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8080
+    volumes:
+      - ./config:/config
+      - ./downloads:/downloads
+    ports:
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    restart: unless-stopped
+```
+
+### Option 2: Building from Source
 
 ### Prerequisites
 
