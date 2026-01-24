@@ -1,3 +1,7 @@
+# Docker Compose configuration for qBittorrent with qbtmud
+# Note: The 'version' field is not specified as it's obsolete in Docker Compose v2
+# and will be ignored with a warning if included.
+
 services:
   qbittorrent:
     build: .

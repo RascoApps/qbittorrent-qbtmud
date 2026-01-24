@@ -21,18 +21,43 @@ if [ ! -f "$MARKER_FILE" ]; then
     
     echo "Downloading qbtmud from: $QBTMUD_URL"
     
-    # Download and extract
+    # Download and extract with error handling
     cd /tmp || exit 1
-    curl -L -o qbtmud.zip "$QBTMUD_URL"
-    unzip -q qbtmud.zip -d qbtmud_extracted
+    if ! curl -L -o qbtmud.zip "$QBTMUD_URL"; then
+        echo "ERROR: Failed to download qbtmud"
+        rm -f qbtmud.zip
+        exit 1
+    fi
+    
+    if ! unzip -q qbtmud.zip -d qbtmud_extracted; then
+        echo "ERROR: Failed to extract qbtmud archive"
+        rm -rf qbtmud.zip qbtmud_extracted
+        exit 1
+    fi
     
     # Move files to webui directory
-    mv qbtmud_extracted/* "${WEBUI_DIR}/" 2>/dev/null || true
+    if [ -d "qbtmud_extracted" ] && [ "$(ls -A qbtmud_extracted 2>/dev/null)" ]; then
+        cp -r qbtmud_extracted/* "${WEBUI_DIR}/" || {
+            echo "ERROR: Failed to copy qbtmud files"
+            rm -rf qbtmud.zip qbtmud_extracted
+            exit 1
+        }
+    else
+        echo "ERROR: qbtmud extraction directory is empty"
+        rm -rf qbtmud.zip qbtmud_extracted
+        exit 1
+    fi
     
     # Clean up
     rm -rf qbtmud.zip qbtmud_extracted
     
-    # Create marker file
+    # Verify installation
+    if [ ! -f "${WEBUI_DIR}/public/index.html" ]; then
+        echo "ERROR: qbtmud installation verification failed - index.html not found"
+        exit 1
+    fi
+    
+    # Create marker file only after successful installation
     touch "$MARKER_FILE"
     
     echo "qbtmud custom WebUI installed successfully!"
