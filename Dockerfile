@@ -4,14 +4,27 @@ FROM lscr.io/linuxserver/qbittorrent:latest
 LABEL maintainer="RascoApps"
 LABEL description="qBittorrent with qbtmud custom WebUI"
 
-# Create custom-cont-init.d directory if it doesn't exist
-RUN mkdir -p /custom-cont-init.d
+# Install qbtmud custom UI during build
+# Using specific version to avoid GitHub API rate limits during build
+ARG QBTMUD_VERSION=2.1.0-rc.1%2B15
+RUN mkdir -p /defaults/webui && \
+    cd /tmp && \
+    echo "Downloading qbtmud version ${QBTMUD_VERSION}..." && \
+    curl -kL -o qbtmud.zip "https://github.com/lantean-code/qbtmud/releases/download/${QBTMUD_VERSION}/qbt-mud-v${QBTMUD_VERSION}.zip" && \
+    unzip -q qbtmud.zip -d qbtmud_extracted && \
+    # Install to defaults directory (LinuxServer.io copies this to /config on first run)
+    cp -r qbtmud_extracted/* /defaults/webui/ && \
+    # Verify installation
+    test -f /defaults/webui/public/index.html || exit 1 && \
+    # Clean up
+    rm -rf /tmp/qbtmud.zip /tmp/qbtmud_extracted && \
+    echo "qbtmud custom WebUI v${QBTMUD_VERSION} installed to image"
 
-# Copy the startup script
-COPY install-qbtmud.sh /custom-cont-init.d/install-qbtmud.sh
+# Copy the configuration script
+COPY configure-qbtmud.sh /custom-cont-init.d/configure-qbtmud.sh
 
 # Make it executable
-RUN chmod +x /custom-cont-init.d/install-qbtmud.sh
+RUN chmod +x /custom-cont-init.d/configure-qbtmud.sh
 
 # Expose ports
 # 8080 - WebUI

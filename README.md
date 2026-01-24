@@ -1,14 +1,15 @@
 # qBittorrent with qbtmud Custom WebUI
 
-A Docker solution that combines the latest qBittorrent release with the modern [qbtmud](https://github.com/lantean-code/qbtmud) custom WebUI.
+A Docker solution that combines the latest qBittorrent release with the modern [qbtmud](https://github.com/lantean-code/qbtmud) custom WebUI, pre-installed during the image build.
 
 ## Features
 
 - **Latest qBittorrent**: Based on LinuxServer.io's qBittorrent image (v5.1.4+)
-- **qbtmud WebUI**: Modern, user-friendly custom interface
+- **qbtmud WebUI**: Modern, user-friendly custom interface (v2.1.0-rc.1+15) pre-installed in the image
 - **Easy Deployment**: Simple Docker Compose setup
 - **Persistent Storage**: Configuration and downloads are preserved
 - **Cross-Platform**: Works on x86-64, ARM64, and other architectures
+- **Fast Startup**: WebUI is bundled in the image, no download needed at container startup
 
 ## Quick Start
 
