@@ -27,6 +27,10 @@ COPY configure-qbtmud.sh /custom-cont-init.d/configure-qbtmud.sh
 # Make it executable
 RUN chmod +x /custom-cont-init.d/configure-qbtmud.sh
 
+# Set default environment variables for LAN auth bypass
+ENV BYPASS_LOCAL_AUTH=true
+ENV AUTH_SUBNETS="192.168.0.0/24"
+
 # Expose ports
 # 8080 - WebUI
 # 6881 - Torrent port (TCP)

@@ -94,6 +94,8 @@ You can customize the following environment variables in `docker-compose.yml`:
 - `PGID=1000` - Group ID for file permissions
 - `TZ=Etc/UTC` - Timezone (e.g., `America/New_York`, `Europe/London`)
 - `WEBUI_PORT=8080` - WebUI port
+- `BYPASS_LOCAL_AUTH=true` - Bypass authentication for local network clients (default: `true`)
+- `AUTH_SUBNETS=192.168.0.0/24` - Comma-separated list of IP subnets to whitelist for auth bypass (default: `192.168.0.0/24`)
 
 #### Volumes
 

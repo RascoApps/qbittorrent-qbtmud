@@ -4,6 +4,10 @@
 # Configure qBittorrent to use qbtmud custom UI
 WEBUI_DIR="/config/qBittorrent/webui"
 
+# Set defaults for LAN auth bypass
+BYPASS_LOCAL_AUTH="${BYPASS_LOCAL_AUTH:-true}"
+AUTH_SUBNETS="${AUTH_SUBNETS:-192.168.0.0/24}"
+
 # Copy qbtmud from defaults if not already present
 if [ ! -f "${WEBUI_DIR}/public/index.html" ]; then
     echo "Copying qbtmud WebUI to config directory..."
@@ -32,5 +36,59 @@ if [ -f "$CONFIG_FILE" ]; then
         fi
         
         echo "qBittorrent configured to use qbtmud WebUI"
+    fi
+fi
+
+# Configure LAN auth bypass if enabled
+if [ "$BYPASS_LOCAL_AUTH" = "true" ]; then
+    echo "Configuring LAN auth bypass..."
+    
+    if [ -f "$CONFIG_FILE" ] && grep -q "\[Preferences\]" "$CONFIG_FILE"; then
+        # Set BypassLocalAuth=true
+        if grep -q "WebUI\\\\BypassLocalAuth" "$CONFIG_FILE"; then
+            sed -i 's/WebUI\\BypassLocalAuth=.*/WebUI\\BypassLocalAuth=true/' "$CONFIG_FILE"
+        else
+            sed -i '/\[Preferences\]/a WebUI\\BypassLocalAuth=true' "$CONFIG_FILE"
+        fi
+        
+        # Set AuthSubnetWhitelistEnabled=true
+        if grep -q "WebUI\\\\AuthSubnetWhitelistEnabled" "$CONFIG_FILE"; then
+            sed -i 's/WebUI\\AuthSubnetWhitelistEnabled=.*/WebUI\\AuthSubnetWhitelistEnabled=true/' "$CONFIG_FILE"
+        else
+            sed -i '/\[Preferences\]/a WebUI\\AuthSubnetWhitelistEnabled=true' "$CONFIG_FILE"
+        fi
+        
+        # Add/merge AUTH_SUBNETS into AuthSubnetWhitelist
+        if grep -q "WebUI\\\\AuthSubnetWhitelist=" "$CONFIG_FILE"; then
+            # Get existing whitelist
+            EXISTING_SUBNETS=$(grep "WebUI\\\\AuthSubnetWhitelist=" "$CONFIG_FILE" | sed 's/.*WebUI\\AuthSubnetWhitelist=//')
+            
+            # Merge subnets, avoiding duplicates
+            IFS=',' read -ra NEW_SUBNETS <<< "$AUTH_SUBNETS"
+            
+            # Build merged list
+            MERGED_SUBNETS="$EXISTING_SUBNETS"
+            for subnet in "${NEW_SUBNETS[@]}"; do
+                subnet=$(echo "$subnet" | xargs) # trim whitespace
+                if [ -n "$subnet" ]; then
+                    # Check if subnet already exists
+                    if ! echo "$EXISTING_SUBNETS" | grep -q "$subnet"; then
+                        if [ -n "$MERGED_SUBNETS" ]; then
+                            MERGED_SUBNETS="${MERGED_SUBNETS}, ${subnet}"
+                        else
+                            MERGED_SUBNETS="$subnet"
+                        fi
+                    fi
+                fi
+            done
+            
+            # Update the config with merged list
+            sed -i "s|WebUI\\\\AuthSubnetWhitelist=.*|WebUI\\\\AuthSubnetWhitelist=${MERGED_SUBNETS}|" "$CONFIG_FILE"
+        else
+            # Add new AuthSubnetWhitelist entry
+            sed -i "/\[Preferences\]/a WebUI\\\\AuthSubnetWhitelist=${AUTH_SUBNETS}" "$CONFIG_FILE"
+        fi
+        
+        echo "LAN auth bypass configured with subnets: ${AUTH_SUBNETS}"
     fi
 fi
