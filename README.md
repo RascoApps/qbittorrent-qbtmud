@@ -4,10 +4,10 @@ A Docker solution that combines the latest qBittorrent release with the modern [
 
 ## Features
 
-- **Latest qBittorrent**: Based on LinuxServer.io's qBittorrent image (v5.1.4+)
-- **qbtmud WebUI**: Modern, user-friendly custom interface (v2.1.0-rc.1+15) pre-installed in the image
+- **Latest qBittorrent**: Based on hotio's qBittorrent image (v5.1.4+)
+- **qbtmud WebUI**: Modern, user-friendly custom interface (v2.1.0) pre-installed in the image
 - **Easy Deployment**: Simple Docker Compose setup or direct docker run
-- **Persistent Storage**: Configuration and downloads are preserved
+- **Persistent Storage**: Configuration and data are preserved
 - **Cross-Platform**: Works on x86-64, ARM64, and other architectures
 - **Fast Startup**: WebUI is bundled in the image, no download needed at container startup
 - **Published Package**: Available on GitHub Container Registry
@@ -24,12 +24,16 @@ docker run -d \
   -e PUID=1000 \
   -e PGID=1000 \
   -e TZ=Etc/UTC \
-  -e WEBUI_PORT=8080 \
+  -e UMASK=002 \
+  -e WEBUI_PORTS=8080/tcp \
+  -e LIBTORRENT=v1 \
+  -e BYPASS_LOCAL_AUTH=true \
+  -e AUTH_SUBNETS=192.168.0.0/24 \
   -p 8080:8080 \
   -p 6881:6881 \
   -p 6881:6881/udp \
   -v ./config:/config \
-  -v ./downloads:/downloads \
+  -v ./data:/data \
   --restart unless-stopped \
   ghcr.io/rascoapps/qbittorrent-qbtmud:latest
 ```
@@ -45,10 +49,14 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - WEBUI_PORT=8080
+      - UMASK=002
+      - WEBUI_PORTS=8080/tcp
+      - LIBTORRENT=v1
+      - BYPASS_LOCAL_AUTH=true
+      - AUTH_SUBNETS=192.168.0.0/24
     volumes:
       - ./config:/config
-      - ./downloads:/downloads
+      - ./data:/data
     ports:
       - "8080:8080"
       - "6881:6881"
@@ -93,14 +101,16 @@ You can customize the following environment variables in `docker-compose.yml`:
 - `PUID=1000` - User ID for file permissions
 - `PGID=1000` - Group ID for file permissions
 - `TZ=Etc/UTC` - Timezone (e.g., `America/New_York`, `Europe/London`)
-- `WEBUI_PORT=8080` - WebUI port
+- `UMASK=002` - File creation mask
+- `WEBUI_PORTS=8080/tcp` - WebUI port mapping
+- `LIBTORRENT=v1` - Libtorrent version (v1 or v2)
 - `BYPASS_LOCAL_AUTH=true` - Bypass authentication for local network clients (default: `true`)
-- `AUTH_SUBNETS=192.168.0.0/24` - Comma-separated list of IP subnets to whitelist for auth bypass (default: `192.168.0.0/24`)
+- `AUTH_SUBNETS=192.168.0.0/24` - Comma-separated list of IP subnets to whitelist for auth bypass (default: `192.168.0.0/24`; adjust to match your network)
 
 #### Volumes
 
 - `./config:/config` - qBittorrent configuration files
-- `./downloads:/downloads` - Default download directory
+- `./data:/data` - Default data directory
 
 #### Ports
 
@@ -169,10 +179,10 @@ docker-compose up -d
 
 ### Permission Issues
 
-If you encounter permission issues with downloads:
+If you encounter permission issues with data:
 
 1. Check your PUID and PGID settings
-2. Ensure the user has write permissions to the downloads directory
+2. Ensure the user has write permissions to the data directory
 3. On Linux, you can find your user ID with: `id -u` and group ID with: `id -g`
 
 ### Reset Password
@@ -189,13 +199,13 @@ If you forget your password:
 This project combines:
 - qBittorrent (GPL-2.0 License)
 - qbtmud (GPL-3.0 License)
-- LinuxServer.io Docker image
+- hotio Docker image
 
 ## Credits
 
 - [qBittorrent](https://www.qbittorrent.org/) - The qBittorrent project
 - [qbtmud](https://github.com/lantean-code/qbtmud) - The custom WebUI
-- [LinuxServer.io](https://www.linuxserver.io/) - Docker image base
+- [hotio](https://hotio.dev/containers/qbittorrent) - Docker image base
 
 ## Support
 

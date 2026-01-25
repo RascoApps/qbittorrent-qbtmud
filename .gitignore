@@ -1,5 +1,6 @@
 # Docker volumes and local data
 config/
+data/
 downloads/
 
 # Logs

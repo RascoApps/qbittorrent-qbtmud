@@ -1,8 +1,10 @@
-#!/usr/bin/with-contenv bash
+#!/command/with-contenv bash
 # shellcheck shell=bash
 
 # Configure qBittorrent to use qbtmud custom UI
-WEBUI_DIR="/config/qBittorrent/webui"
+CONFIG_DIR="${CONFIG_DIR:-/config}"
+APP_DIR="${APP_DIR:-/app}"
+WEBUI_DIR="${CONFIG_DIR}/qBittorrent/webui"
 
 # Set defaults for LAN auth bypass
 BYPASS_LOCAL_AUTH="${BYPASS_LOCAL_AUTH:-true}"
@@ -12,12 +14,12 @@ AUTH_SUBNETS="${AUTH_SUBNETS:-192.168.0.0/24}"
 if [ ! -f "${WEBUI_DIR}/public/index.html" ]; then
     echo "Copying qbtmud WebUI to config directory..."
     mkdir -p "${WEBUI_DIR}"
-    cp -r /defaults/webui/* "${WEBUI_DIR}/"
+    cp -r "${APP_DIR}/defaults/webui/"* "${WEBUI_DIR}/"
     echo "qbtmud custom WebUI copied successfully!"
 fi
 
 # Enable alternative WebUI in qBittorrent config
-CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
+CONFIG_FILE="${CONFIG_DIR}/qBittorrent/qBittorrent.conf"
 if [ -f "$CONFIG_FILE" ]; then
     echo "Configuring qBittorrent to use qbtmud WebUI..."
     # Check if WebUI section exists
