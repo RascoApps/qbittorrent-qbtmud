@@ -71,8 +71,8 @@ if [ "$BYPASS_LOCAL_AUTH" = "true" ]; then
             for subnet in "${NEW_SUBNETS[@]}"; do
                 subnet=$(echo "$subnet" | xargs) # trim whitespace
                 if [ -n "$subnet" ]; then
-                    # Check if subnet already exists
-                    if ! echo "$EXISTING_SUBNETS" | grep -q "$subnet"; then
+                    # Check if subnet already exists (exact match with word boundaries)
+                    if ! echo ",$EXISTING_SUBNETS," | grep -q ",$subnet,"; then
                         if [ -n "$MERGED_SUBNETS" ]; then
                             MERGED_SUBNETS="${MERGED_SUBNETS}, ${subnet}"
                         else
@@ -84,11 +84,11 @@ if [ "$BYPASS_LOCAL_AUTH" = "true" ]; then
             
             # Update the config with merged list
             sed -i "s|WebUI\\\\AuthSubnetWhitelist=.*|WebUI\\\\AuthSubnetWhitelist=${MERGED_SUBNETS}|" "$CONFIG_FILE"
+            echo "LAN auth bypass configured with merged subnets: ${MERGED_SUBNETS}"
         else
             # Add new AuthSubnetWhitelist entry
             sed -i "/\[Preferences\]/a WebUI\\\\AuthSubnetWhitelist=${AUTH_SUBNETS}" "$CONFIG_FILE"
+            echo "LAN auth bypass configured with subnets: ${AUTH_SUBNETS}"
         fi
-        
-        echo "LAN auth bypass configured with subnets: ${AUTH_SUBNETS}"
     fi
 fi
