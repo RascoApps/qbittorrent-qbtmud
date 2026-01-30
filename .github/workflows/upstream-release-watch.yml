@@ -1,0 +1,75 @@
+name: Watch upstream releases
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch upstream release versions
+        id: fetch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          qbittorrent_version=$(gh api repos/qbittorrent/qBittorrent/releases/latest --jq '.tag_name')
+          qbtmud_version=$(gh api repos/lantean-code/qbtmud/releases/latest --jq '.tag_name')
+
+          echo "qbittorrent=${qbittorrent_version}" >> "$GITHUB_OUTPUT"
+          echo "qbtmud=${qbtmud_version}" >> "$GITHUB_OUTPUT"
+
+      - name: Check tracked versions
+        id: versions
+        run: |
+          set -euo pipefail
+
+          tracked_qbittorrent=$(jq -r '.qbittorrent' .github/upstream-versions.json)
+          tracked_qbtmud=$(jq -r '.qbtmud' .github/upstream-versions.json)
+
+          echo "tracked_qbittorrent=${tracked_qbittorrent}" >> "$GITHUB_OUTPUT"
+          echo "tracked_qbtmud=${tracked_qbtmud}" >> "$GITHUB_OUTPUT"
+
+      - name: Update version tracking
+        if: steps.fetch.outputs.qbittorrent != steps.versions.outputs.tracked_qbittorrent || steps.fetch.outputs.qbtmud != steps.versions.outputs.tracked_qbtmud
+        run: |
+          set -euo pipefail
+
+          jq \
+            --arg qbittorrent "${{ steps.fetch.outputs.qbittorrent }}" \
+            --arg qbtmud "${{ steps.fetch.outputs.qbtmud }}" \
+            '.qbittorrent = $qbittorrent | .qbtmud = $qbtmud' \
+            .github/upstream-versions.json > /tmp/upstream-versions.json
+
+          mv /tmp/upstream-versions.json .github/upstream-versions.json
+
+      - name: Commit version update
+        id: commit
+        if: steps.fetch.outputs.qbittorrent != steps.versions.outputs.tracked_qbittorrent || steps.fetch.outputs.qbtmud != steps.versions.outputs.tracked_qbtmud
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/upstream-versions.json
+          git commit -m "chore: update qbittorrent to ${{ steps.fetch.outputs.qbittorrent }} and qbtmud to ${{ steps.fetch.outputs.qbtmud }}"
+          git push
+
+      - name: Trigger rebuild
+        if: steps.commit.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh workflow run docker-publish.yml --ref "${GITHUB_REF_NAME}"
