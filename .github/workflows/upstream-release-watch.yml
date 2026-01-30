@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
   contents: write
 
 jobs:
@@ -56,6 +55,7 @@ jobs:
           mv /tmp/upstream-versions.json .github/upstream-versions.json
 
       - name: Commit version update
+        id: commit
         if: steps.fetch.outputs.qbittorrent != steps.versions.outputs.tracked_qbittorrent || steps.fetch.outputs.qbtmud != steps.versions.outputs.tracked_qbtmud
         run: |
           set -euo pipefail
@@ -63,13 +63,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/upstream-versions.json
-          git commit -m "chore: track upstream releases"
+          git commit -m "chore: update qbittorrent to ${{ steps.fetch.outputs.qbittorrent }} and qbtmud to ${{ steps.fetch.outputs.qbtmud }}"
           git push
 
       - name: Trigger rebuild
-        if: steps.fetch.outputs.qbittorrent != steps.versions.outputs.tracked_qbittorrent || steps.fetch.outputs.qbtmud != steps.versions.outputs.tracked_qbtmud
+        if: steps.commit.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          gh workflow run docker-publish.yml
+          gh workflow run docker-publish.yml --ref "${GITHUB_REF_NAME}"
