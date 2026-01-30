@@ -145,6 +145,10 @@ docker-compose pull
 docker-compose up -d
 ```
 
+### Automation
+
+This repository includes a scheduled workflow that checks for new qBittorrent and qbtmud releases daily. When a new release is detected, the workflow updates `.github/upstream-versions.json` and triggers the Docker image rebuild.
+
 ## About qbtmud
 
 [qbtmud](https://github.com/lantean-code/qbtmud) is a drop-in replacement WebUI for qBittorrent that provides:
