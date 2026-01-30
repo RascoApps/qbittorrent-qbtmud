@@ -9,7 +9,7 @@ LABEL description="qBittorrent with qbtmud custom WebUI"
 ARG QBTMUD_VERSION=2.2.0-rc.2+5
 ARG QBTMUD_VERSION_ENCODED=2.2.0-rc.2%2B5
 ARG QBTMUD_SHA256=3a4e8a561f8e24b41eb7cdfd9459b48946df6abf45645468b45c61acdab5f194
-RUN set -euo pipefail && \
+RUN set -eu && \
     mkdir -p /defaults/webui && \
     cd /tmp && \
     echo "Downloading qbtmud version ${QBTMUD_VERSION}..." && \
