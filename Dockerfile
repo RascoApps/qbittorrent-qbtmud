@@ -6,12 +6,15 @@ LABEL description="qBittorrent with qbtmud custom WebUI"
 
 # Install qbtmud custom UI during build
 # Using specific version to ensure reproducible builds
-ARG QBTMUD_VERSION=2.1.0-rc.1+15
-ARG QBTMUD_VERSION_ENCODED=2.1.0-rc.1%2B15
-RUN mkdir -p /defaults/webui && \
+ARG QBTMUD_VERSION=2.2.0-rc.2+5
+ARG QBTMUD_VERSION_ENCODED=2.2.0-rc.2%2B5
+ARG QBTMUD_SHA256=3a4e8a561f8e24b41eb7cdfd9459b48946df6abf45645468b45c61acdab5f194
+RUN set -euo pipefail && \
+    mkdir -p /defaults/webui && \
     cd /tmp && \
     echo "Downloading qbtmud version ${QBTMUD_VERSION}..." && \
-    curl -kL -o qbtmud.zip "https://github.com/lantean-code/qbtmud/releases/download/${QBTMUD_VERSION_ENCODED}/qbt-mud-v${QBTMUD_VERSION_ENCODED}.zip" && \
+    curl -fsSL -o qbtmud.zip "https://github.com/lantean-code/qbtmud/releases/download/${QBTMUD_VERSION_ENCODED}/qbt-mud-v${QBTMUD_VERSION_ENCODED}.zip" && \
+    echo "${QBTMUD_SHA256}  qbtmud.zip" | sha256sum -c - && \
     unzip -q qbtmud.zip -d qbtmud_extracted && \
     # Install to defaults directory (LinuxServer.io copies this to /config on first run)
     cp -r qbtmud_extracted/* /defaults/webui/ && \

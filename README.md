@@ -5,7 +5,7 @@ A Docker solution that combines the latest qBittorrent release with the modern [
 ## Features
 
 - **Latest qBittorrent**: Based on LinuxServer.io's qBittorrent image (v5.1.4+)
-- **qbtmud WebUI**: Modern, user-friendly custom interface (v2.1.0-rc.1+15) pre-installed in the image
+- **qbtmud WebUI**: Modern, user-friendly custom interface (v2.2.0-rc.2+5) pre-installed in the image
 - **Easy Deployment**: Simple Docker Compose setup or direct docker run
 - **Persistent Storage**: Configuration and downloads are preserved
 - **Cross-Platform**: Works on x86-64, ARM64, and other architectures
