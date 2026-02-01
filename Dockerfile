@@ -5,16 +5,45 @@ LABEL maintainer="RascoApps"
 LABEL description="qBittorrent with qbtmud custom WebUI"
 
 # Install qbtmud custom UI during build
-# Using specific version to ensure reproducible builds
-ARG QBTMUD_VERSION=2.2.0-rc.2+5
-ARG QBTMUD_VERSION_ENCODED=2.2.0-rc.2%2B5
-ARG QBTMUD_SHA256=3a4e8a561f8e24b41eb7cdfd9459b48946df6abf45645468b45c61acdab5f194
+# Always pull the latest release unless overridden
+ARG QBTMUD_VERSION=latest
+ARG QBTMUD_RELEASES_URL=https://github.com/lantean-code/qbtmud/releases/latest
+ARG QBTMUD_ZIP_URL=latest
+ARG QBTMUD_SHA256=skip
 RUN set -eu && \
     mkdir -p /defaults/webui && \
     cd /tmp && \
+    QBTMUD_VERSION_TAG="${QBTMUD_VERSION}" && \
+    if [ "${QBTMUD_VERSION}" = "latest" ]; then \
+        QBTMUD_RELEASE_HEADERS=$(curl -fsSLI --max-time 30 "${QBTMUD_RELEASES_URL}") || { \
+            echo "Failed to fetch latest qbtmud release headers from ${QBTMUD_RELEASES_URL}" >&2; \
+            exit 1; \
+        }; \
+        QBTMUD_RELEASE_LOCATION=$(printf '%s' "${QBTMUD_RELEASE_HEADERS}" | \
+            grep -i '^location:' | head -n 1); \
+        if [ -z "${QBTMUD_RELEASE_LOCATION}" ]; then \
+            echo "No release location header found from ${QBTMUD_RELEASES_URL}" >&2; \
+            exit 1; \
+        fi; \
+        QBTMUD_VERSION_TAG=$(printf '%s' "${QBTMUD_RELEASE_LOCATION}" | sed 's|.*/tag/||' | tr -d '\r'); \
+    fi && \
+    if [ -z "${QBTMUD_VERSION_TAG}" ]; then \
+        echo "Resolved an empty qbtmud release tag from ${QBTMUD_RELEASES_URL}" >&2; \
+        exit 1; \
+    fi && \
+    case "${QBTMUD_VERSION_TAG}" in \
+        v*) QBTMUD_VERSION="${QBTMUD_VERSION_TAG#v}" ;; \
+        *) QBTMUD_VERSION="${QBTMUD_VERSION_TAG}" ;; \
+    esac && \
+    QBTMUD_VERSION_ENCODED=$(printf '%s' "${QBTMUD_VERSION}" | sed 's/+/%2B/g') && \
+    if [ "${QBTMUD_ZIP_URL}" = "latest" ]; then \
+        QBTMUD_ZIP_URL="https://github.com/lantean-code/qbtmud/releases/download/${QBTMUD_VERSION_ENCODED}/qbt-mud-v${QBTMUD_VERSION_ENCODED}.zip"; \
+    fi && \
     echo "Downloading qbtmud version ${QBTMUD_VERSION}..." && \
-    curl -fsSL -o qbtmud.zip "https://github.com/lantean-code/qbtmud/releases/download/${QBTMUD_VERSION_ENCODED}/qbt-mud-v${QBTMUD_VERSION_ENCODED}.zip" && \
-    echo "${QBTMUD_SHA256}  qbtmud.zip" | sha256sum -c - && \
+    curl -fsSL -o qbtmud.zip "${QBTMUD_ZIP_URL}" && \
+    if [ "${QBTMUD_SHA256}" != "skip" ]; then \
+        echo "${QBTMUD_SHA256}  qbtmud.zip" | sha256sum -c -; \
+    fi && \
     unzip -q qbtmud.zip -d qbtmud_extracted && \
     # Install to defaults directory (LinuxServer.io copies this to /config on first run)
     cp -r qbtmud_extracted/* /defaults/webui/ && \

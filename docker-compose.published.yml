@@ -5,6 +5,83 @@ services:
   qbittorrent:
     image: ghcr.io/rascoapps/qbittorrent-qbtmud:latest
     container_name: qbittorrent-qbtmud
+    command: >
+      /bin/sh -c '
+      WEBUI_DIR="/config/qBittorrent/webui"
+      BYPASS_LOCAL_AUTH="${BYPASS_LOCAL_AUTH:-true}"
+      AUTH_SUBNETS="${AUTH_SUBNETS:-192.168.0.0/24}"
+      AUTH_SUBNET_KEY="WebUI\\\\AuthSubnetWhitelist="
+      CONFIG_FILE="/config/qBittorrent/qBittorrent.conf"
+      if [ ! -f "$CONFIG_FILE" ]; then
+        echo "Creating qBittorrent config file..."
+        mkdir -p "$(dirname "$CONFIG_FILE")"
+        printf "%s\n" "[Preferences]" > "$CONFIG_FILE"
+      fi
+      if [ ! -f "${WEBUI_DIR}/public/index.html" ]; then
+        echo "Copying qbtmud WebUI to config directory..."
+        mkdir -p "${WEBUI_DIR}"
+        cp -r /defaults/webui/* "${WEBUI_DIR}/"
+        echo "qbtmud custom WebUI copied successfully!"
+      fi
+      if [ -f "$CONFIG_FILE" ]; then
+        echo "Configuring qBittorrent to use qbtmud WebUI..."
+        if grep -q "\[Preferences\]" "$CONFIG_FILE"; then
+          if grep -q "WebUI\\\\AlternativeUIEnabled" "$CONFIG_FILE"; then
+            sed -i "s/WebUI\\\\AlternativeUIEnabled=.*/WebUI\\\\AlternativeUIEnabled=true/" "$CONFIG_FILE"
+          else
+            sed -i "/\\[Preferences\\]/a WebUI\\\\AlternativeUIEnabled=true" "$CONFIG_FILE"
+          fi
+          if grep -q "WebUI\\\\RootFolder" "$CONFIG_FILE"; then
+            sed -i "s|WebUI\\\\RootFolder=.*|WebUI\\\\RootFolder=${WEBUI_DIR}|" "$CONFIG_FILE"
+          else
+            sed -i "/\\[Preferences\\]/a WebUI\\\\RootFolder=${WEBUI_DIR}" "$CONFIG_FILE"
+          fi
+          echo "qBittorrent configured to use qbtmud WebUI"
+        fi
+      fi
+      if [ "$BYPASS_LOCAL_AUTH" = "true" ]; then
+        echo "Configuring LAN auth bypass..."
+        if [ -f "$CONFIG_FILE" ] && grep -q "\[Preferences\]" "$CONFIG_FILE"; then
+          if grep -q "WebUI\\\\BypassLocalAuth" "$CONFIG_FILE"; then
+            sed -i "s/WebUI\\\\BypassLocalAuth=.*/WebUI\\\\BypassLocalAuth=true/" "$CONFIG_FILE"
+          else
+            sed -i "/\\[Preferences\\]/a WebUI\\\\BypassLocalAuth=true" "$CONFIG_FILE"
+          fi
+          if grep -q "WebUI\\\\AuthSubnetWhitelistEnabled" "$CONFIG_FILE"; then
+            sed -i "s/WebUI\\\\AuthSubnetWhitelistEnabled=.*/WebUI\\\\AuthSubnetWhitelistEnabled=true/" "$CONFIG_FILE"
+          else
+            sed -i "/\\[Preferences\\]/a WebUI\\\\AuthSubnetWhitelistEnabled=true" "$CONFIG_FILE"
+          fi
+          EXISTING_SUBNETS=$(grep "$AUTH_SUBNET_KEY" "$CONFIG_FILE" | head -n 1)
+          if [ -n "$EXISTING_SUBNETS" ]; then
+            EXISTING_SUBNETS=$(printf '%s' "$EXISTING_SUBNETS" | sed -E "s/^${AUTH_SUBNET_KEY}//")
+            SAVED_IFS="$IFS"
+            IFS=","
+            MERGED_SUBNETS="$EXISTING_SUBNETS"
+            for subnet in $AUTH_SUBNETS; do
+              subnet="${subnet#"${subnet%%[![:space:]]*}"}"
+              subnet="${subnet%"${subnet##*[![:space:]]}"}"
+              if [ -n "$subnet" ]; then
+                if ! echo ",$EXISTING_SUBNETS," | grep -Fq ",$subnet,"; then
+                  if [ -n "$MERGED_SUBNETS" ]; then
+                    MERGED_SUBNETS="${MERGED_SUBNETS}, ${subnet}"
+                  else
+                    MERGED_SUBNETS="$subnet"
+                  fi
+                fi
+              fi
+            done
+            IFS="$SAVED_IFS"
+            sed -i "s|${AUTH_SUBNET_KEY}.*|${AUTH_SUBNET_KEY}${MERGED_SUBNETS}|" "$CONFIG_FILE"
+            echo "LAN auth bypass configured with merged subnets: ${MERGED_SUBNETS}"
+          else
+            sed -i "/\\[Preferences\\]/a ${AUTH_SUBNET_KEY}${AUTH_SUBNETS}" "$CONFIG_FILE"
+            echo "LAN auth bypass configured with subnets: ${AUTH_SUBNETS}"
+          fi
+        fi
+      fi
+      exec /init
+      '
     environment:
       - PUID=1000
       - PGID=1000
