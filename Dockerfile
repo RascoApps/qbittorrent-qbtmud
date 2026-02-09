@@ -6,8 +6,8 @@ LABEL description="qBittorrent with qbtmud custom WebUI"
 
 # Install qbtmud custom UI during build
 # Using specific version to ensure reproducible builds
-ARG QBTMUD_VERSION=2.2.0-rc.3+1
-ARG QBTMUD_VERSION_ENCODED=2.2.0-rc.3%2B1
+ARG QBTMUD_VERSION=2.2.0
+ARG QBTMUD_VERSION_ENCODED=2.2.0
 RUN mkdir -p /defaults/webui && \
     cd /tmp && \
     echo "Downloading qbtmud version ${QBTMUD_VERSION}..." && \
